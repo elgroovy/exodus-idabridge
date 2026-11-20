@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3B7A2E41-6C0D-4F2A-9E51-8D4C7A1B2F60}</ProjectGuid>
+    <RootNamespace>IdaBridge</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)\Build\MSBuild\Exodus.Build.PreProject.CPlusPlus.targets" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\Build\PropertySheets\PluginReleasex64.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\Build\PropertySheets\PluginDebugx64.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VCPKG_ROOT)</VcpkgRoot>
+    <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VsInstallRoot)\VC\vcpkg</VcpkgRoot>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgTriplet>x64-windows-static-md</VcpkgTriplet>
+    <VcpkgInstalledDir>$(MSBuildProjectDirectory)\vcpkg_installed\</VcpkgInstalledDir>
+    <!-- grpc paths blow past MAX_PATH if it builds inside the project folder -->
+    <VcpkgAdditionalInstallOptions>--x-buildtrees-root=$(SystemDrive)\vcb --clean-after-build</VcpkgAdditionalInstallOptions>
+    <ProtoGenDir>$(IntDir)proto\</ProtoGenDir>
+    <VcpkgToolsDir>$(VcpkgInstalledDir)x64-windows\tools\</VcpkgToolsDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProtoGenDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/external:I"$(VcpkgInstalledDir)$(VcpkgTriplet)\include" /external:I"$(ProtoGenDir)." /external:W0 %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;iphlpapi.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\ExodusSDK\Extension\Extension.vcxproj">
+      <Project>{8196f896-d9ae-4f6b-9b5a-af2553ea0b32}</Project>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ExodusSDK\GenericAccess\GenericAccess.vcxproj">
+      <Project>{2f6dd00a-03eb-4fe1-95be-f1af9232f302}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ExodusSDK\Processor\Processor.vcxproj">
+      <Project>{47967ef3-5853-4bc8-b863-e6674079871b}</Project>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="proto\debug_proto_68k.proto">
+      <Message>protoc %(Filename)%(Extension)</Message>
+      <Command>if not exist "$(ProtoGenDir)" mkdir "$(ProtoGenDir)"
+"$(VcpkgToolsDir)protobuf\protoc.exe" -I"%(RootDir)%(Directory)." -I"$(VcpkgInstalledDir)$(VcpkgTriplet)\include" --cpp_out="$(ProtoGenDir)." --grpc_out="$(ProtoGenDir)." --plugin=protoc-gen-grpc="$(VcpkgToolsDir)grpc\grpc_cpp_plugin.exe" "%(FullPath)"</Command>
+      <Outputs>$(ProtoGenDir)%(Filename).pb.cc;$(ProtoGenDir)%(Filename).pb.h;$(ProtoGenDir)%(Filename).grpc.pb.cc;$(ProtoGenDir)%(Filename).grpc.pb.h</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(ProtoGenDir)debug_proto_68k.pb.cc">
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="$(ProtoGenDir)debug_proto_68k.grpc.pb.cc">
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="DbgServer.cpp" />
+    <ClCompile Include="IdaBridge.cpp" />
+    <ClCompile Include="interface.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DbgServer.h" />
+    <ClInclude Include="IdaBridge.h" />
+    <ClInclude Include="interface.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="IdaBridge.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="vcpkg.json" />
+    <None Include="vcpkg-configuration.json" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.targets" Condition="exists('$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.targets')" />
+</Project>
